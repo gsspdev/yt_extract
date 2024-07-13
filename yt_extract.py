@@ -29,6 +29,27 @@ def get_yt_metadata(link):
         print(f"Error parsing JSON: {e}", file=sys.stderr)
         return None
 
+def get_yt_transcript(link):
+    """
+    Run the 'yt --transcript <link>' command and return the output.
+
+    Args:
+    link (str): The YouTube video link to fetch the transcript for.
+
+    Returns:
+    str: The transcript text or None if an error occurs.
+    """
+    try:
+        result = subprocess.run(['yt', '--transcript', link],
+                                capture_output=True,
+                                text=True,
+                                check=True)
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"Error running command: {e}", file=sys.stderr)
+        print(f"Error output: {e.stderr}", file=sys.stderr)
+        return None
+
 def sanitize_filename(title):
     """
     Sanitize the title to create a valid filename.
@@ -39,7 +60,7 @@ def sanitize_filename(title):
     Returns:
     str: A sanitized version of the title suitable for use as a filename.
     """
-    sanitized = re.sub(r'[\\/*?:"<>|]', "", title)
+    sanitized = re.sub(r'[\\/*?:"<>|].', "", title)
     sanitized = sanitized.replace(" ", "_")
     return sanitized[:255]
 
@@ -63,6 +84,26 @@ def save_metadata_to_file(metadata, title):
         json.dump(metadata, f, ensure_ascii=False, indent=2)
     print(f"Metadata saved to {filepath}")
 
+def save_transcript_to_file(transcript, title):
+    """
+    Save the transcript to a text file in the 'transcripts' folder.
+
+    Args:
+    transcript (str): The transcript text to save.
+    title (str): The title to use for the filename.
+    """
+    # Create the 'transcripts' directory in the root if it doesn't exist
+    transcripts_dir = os.path.join(os.path.expanduser("~"), "transcripts")
+    os.makedirs(transcripts_dir, exist_ok=True)
+
+    sanitized_title = sanitize_filename(title)
+    filename = f"{sanitized_title}.txt"
+    filepath = os.path.join(transcripts_dir, filename)
+
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(transcript)
+    print(f"Transcript saved to {filepath}")
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python script.py <youtube_link>")
@@ -70,9 +111,13 @@ if __name__ == "__main__":
 
     link = sys.argv[1]
     metadata = get_yt_metadata(link)
+    transcript = get_yt_transcript(link)
+    title = sanitize_filename(metadata.get('title', 'Untitled'))
+    # unsanizitized_title = get_yt_title(metadata)
+    # title = sanitize_filename(unsanizitized_title)
 
-    if metadata:
-        title = metadata.get('title', 'Untitled')
-        save_metadata_to_file(metadata, title)
+
+    if transcript:
+        save_transcript_to_file(transcript, title)
     else:
-        print("Failed to retrieve metadata.")
+        print("Failed to retrieve transcript.")
