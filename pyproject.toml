@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yt_extract"
+version = "0.1.0"
+description = "Extracts transcript and metadata of youtube videos"
+authors = [{name = "Benjamin Hampikian", email = "dev@gssp.io"}]
+readme = "README.md"
+requires-python = ">=3.6"
+license = {text = "MIT"}
+
+[project.scripts]
+yt_extract = "yt_extract:main"
+
+[tool.setuptools]
+py-modules = ["yt_extract"]
